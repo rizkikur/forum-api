@@ -1,5 +1,5 @@
 const routes = require('./routes');
-const LikesHandler = require('./Handler');
+const LikesHandler = require('./handler');
 
 module.exports = {
   name: 'likes',
