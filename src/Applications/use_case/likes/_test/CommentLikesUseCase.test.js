@@ -30,7 +30,7 @@ describe('CommentLikesUseCase', () => {
       .mockImplementation(() => Promise.resolve([]));
     mockCommentLikesRepository.addLike = jest
       .fn()
-      .mockImplementation(() => Promise.resolve({ status: 'success' }));
+      .mockImplementation(() => Promise.resolve(1));
 
     const commentLikesUseCase = new CommentLikesUseCase({
       CommentLikesRepository: mockCommentLikesRepository,
@@ -43,8 +43,6 @@ describe('CommentLikesUseCase', () => {
       mockThread.id,
       mockComment.id
     );
-
-    expect(addLikeResponse).toStrictEqual({ status: 'success' });
 
     expect(mockThreadRepository.verifyAvailableThread).toBeCalledWith(
       mockThread.id
@@ -90,7 +88,7 @@ describe('CommentLikesUseCase', () => {
       .mockImplementation(() => Promise.resolve([{ id: 'like-123' }]));
     mockCommentLikesRepository.deleteLikeById = jest
       .fn()
-      .mockImplementation(() => Promise.resolve({ status: 'success' }));
+      .mockImplementation(() => Promise.resolve(1));
 
     const commentLikesUseCase = new CommentLikesUseCase({
       CommentLikesRepository: mockCommentLikesRepository,
@@ -103,8 +101,6 @@ describe('CommentLikesUseCase', () => {
       mockThread.id,
       mockComment.id
     );
-
-    expect(removeLikeResponse).toStrictEqual({ status: 'success' });
 
     expect(mockThreadRepository.verifyAvailableThread).toBeCalledWith(
       mockThread.id
@@ -120,5 +116,48 @@ describe('CommentLikesUseCase', () => {
     expect(mockCommentLikesRepository.deleteLikeById).toBeCalledWith(
       'like-123'
     );
+  });
+
+  it('should throw an error if thread is not available', async () => {
+    const mockThreadRepository = new ThreadRepository();
+    const mockCommentRepository = new CommentRepository();
+    const mockCommentLikesRepository = new CommentLikesRepository();
+
+    mockThreadRepository.verifyAvailableThread = jest
+      .fn()
+      .mockImplementation(() => Promise.reject(new Error('Thread not found')));
+
+    const commentLikesUseCase = new CommentLikesUseCase({
+      CommentLikesRepository: mockCommentLikesRepository,
+      threadRepository: mockThreadRepository,
+      commentRepository: mockCommentRepository,
+    });
+
+    await expect(
+      commentLikesUseCase.execute('user-123', 'thread-123', 'comment-123')
+    ).rejects.toThrow('Thread not found');
+  });
+
+  it('should throw an error if comment is not available', async () => {
+    const mockThreadRepository = new ThreadRepository();
+    const mockCommentRepository = new CommentRepository();
+    const mockCommentLikesRepository = new CommentLikesRepository();
+
+    mockThreadRepository.verifyAvailableThread = jest
+      .fn()
+      .mockImplementation(() => Promise.resolve('thread-123'));
+    mockCommentRepository.checkAvailableComment = jest
+      .fn()
+      .mockImplementation(() => Promise.reject(new Error('Comment not found')));
+
+    const commentLikesUseCase = new CommentLikesUseCase({
+      CommentLikesRepository: mockCommentLikesRepository,
+      threadRepository: mockThreadRepository,
+      commentRepository: mockCommentRepository,
+    });
+
+    await expect(
+      commentLikesUseCase.execute('user-123', 'thread-123', 'comment-123')
+    ).rejects.toThrow('Comment not found');
   });
 });
